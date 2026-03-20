@@ -1,0 +1,53 @@
+## .NET build artifacts
+
+# Build output
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+*.userprefs
+*.pidb
+*.sln.docstates
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+!**/packages/repositories.config
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Test results
+[Tt]est[Rr]esult/
+[Bb]uild[Ll]og.*
+TestResult.xml
+*.trx
+[Rr]esult.xml
+
+# User-specific settings
+*.rsuser
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage*/
+*.coveragexml
+*.coverage
+*.opencover.xml
+lcov.info
+
+# dotnet publish output
+publish/
+PublishOutput/
+
+# Runtime data (generated on startup by WolverineFx)
+Internal.Generated.WolverineHandlers/
+
+# Docker
+.dockerignore
