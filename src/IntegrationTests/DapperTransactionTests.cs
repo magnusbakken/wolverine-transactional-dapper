@@ -93,9 +93,12 @@ public class DapperTransactionTests : IAsyncLifetime
         SkipIfNoDatabase();
 
         var orderId = Guid.NewGuid();
-        var bus = _host.Services.GetRequiredService<IMessageBus>();
 
-        await bus.InvokeAsync(new CreateOrder(orderId, "Eve", 150m));
+        await using (var busScope = _host.Services.CreateAsyncScope())
+        {
+            var bus = busScope.ServiceProvider.GetRequiredService<IMessageBus>();
+            await bus.InvokeAsync(new CreateOrder(orderId, "Eve", 150m));
+        }
 
         await using var conn = new NpgsqlConnection(TestInfrastructure.ConnectionString);
         await conn.OpenAsync();
@@ -121,10 +124,13 @@ public class DapperTransactionTests : IAsyncLifetime
         SkipIfNoDatabase();
 
         var orderId = Guid.NewGuid();
-        var bus = _host.Services.GetRequiredService<IMessageBus>();
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            bus.InvokeAsync(new CreateOrder(orderId, "Frank", -5m)));
+        await using (var busScope = _host.Services.CreateAsyncScope())
+        {
+            var bus = busScope.ServiceProvider.GetRequiredService<IMessageBus>();
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                bus.InvokeAsync(new CreateOrder(orderId, "Frank", -5m)));
+        }
 
         await using var conn = new NpgsqlConnection(TestInfrastructure.ConnectionString);
         await conn.OpenAsync();
@@ -142,10 +148,13 @@ public class DapperTransactionTests : IAsyncLifetime
         SkipIfNoDatabase();
 
         var orderId = Guid.NewGuid();
-        var bus = _host.Services.GetRequiredService<IMessageBus>();
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            bus.InvokeAsync(new CreateOrder(orderId, "George", -5m)));
+        await using (var busScope = _host.Services.CreateAsyncScope())
+        {
+            var bus = busScope.ServiceProvider.GetRequiredService<IMessageBus>();
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                bus.InvokeAsync(new CreateOrder(orderId, "George", -5m)));
+        }
 
         await using var conn = new NpgsqlConnection(TestInfrastructure.ConnectionString);
         await conn.OpenAsync();
@@ -166,9 +175,12 @@ public class DapperTransactionTests : IAsyncLifetime
         SkipIfNoDatabase();
 
         var orderId = Guid.NewGuid();
-        var bus = _host.Services.GetRequiredService<IMessageBus>();
 
-        await bus.InvokeAsync(new CreateOrder(orderId, "Helen", 75m));
+        await using (var busScope = _host.Services.CreateAsyncScope())
+        {
+            var bus = busScope.ServiceProvider.GetRequiredService<IMessageBus>();
+            await bus.InvokeAsync(new CreateOrder(orderId, "Helen", 75m));
+        }
 
         // Allow time for the cascaded OrderCreated handler to run.
         await Task.Delay(300);
