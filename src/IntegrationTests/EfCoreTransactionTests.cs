@@ -101,9 +101,12 @@ public class EfCoreTransactionTests : IAsyncLifetime
         SkipIfNoDatabase();
 
         var orderId = Guid.NewGuid();
-        var bus = _host.Services.GetRequiredService<IMessageBus>();
 
-        await bus.InvokeAsync(new CreateOrder(orderId, "Alice", 99.99m));
+        await using (var busScope = _host.Services.CreateAsyncScope())
+        {
+            var bus = busScope.ServiceProvider.GetRequiredService<IMessageBus>();
+            await bus.InvokeAsync(new CreateOrder(orderId, "Alice", 99.99m));
+        }
 
         await using var scope = _host.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<TestDbContext>();
@@ -128,11 +131,14 @@ public class EfCoreTransactionTests : IAsyncLifetime
         SkipIfNoDatabase();
 
         var orderId = Guid.NewGuid();
-        var bus = _host.Services.GetRequiredService<IMessageBus>();
 
         // Handler throws for negative amount — the entire transaction rolls back.
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            bus.InvokeAsync(new CreateOrder(orderId, "Bob", -10m)));
+        await using (var busScope = _host.Services.CreateAsyncScope())
+        {
+            var bus = busScope.ServiceProvider.GetRequiredService<IMessageBus>();
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                bus.InvokeAsync(new CreateOrder(orderId, "Bob", -10m)));
+        }
 
         // No order row should exist.
         await using var scope = _host.Services.CreateAsyncScope();
@@ -148,10 +154,13 @@ public class EfCoreTransactionTests : IAsyncLifetime
         SkipIfNoDatabase();
 
         var orderId = Guid.NewGuid();
-        var bus = _host.Services.GetRequiredService<IMessageBus>();
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            bus.InvokeAsync(new CreateOrder(orderId, "Carol", -10m)));
+        await using (var busScope = _host.Services.CreateAsyncScope())
+        {
+            var bus = busScope.ServiceProvider.GetRequiredService<IMessageBus>();
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                bus.InvokeAsync(new CreateOrder(orderId, "Carol", -10m)));
+        }
 
         // No outbox entry should have been committed for this order.
         await using var conn = new NpgsqlConnection(TestInfrastructure.ConnectionString);
@@ -211,8 +220,11 @@ public class EfCoreTransactionTests : IAsyncLifetime
 
         try
         {
-            var bus = testHost.Services.GetRequiredService<IMessageBus>();
-            await bus.InvokeAsync(new CreateOrder(orderId, "Diana", 200m));
+            await using (var busScope = testHost.Services.CreateAsyncScope())
+            {
+                var bus = busScope.ServiceProvider.GetRequiredService<IMessageBus>();
+                await bus.InvokeAsync(new CreateOrder(orderId, "Diana", 200m));
+            }
 
             // Allow time for the cascaded OrderCreated handler to run.
             await Task.Delay(500);
